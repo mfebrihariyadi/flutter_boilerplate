@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 
 class AppLogger {
@@ -41,7 +40,11 @@ class AppLogger {
     );
   }
 
-  static String mask(String? value, {int visibleStart = 4, int visibleEnd = 2}) {
+  static String mask(
+    String? value, {
+    int visibleStart = 4,
+    int visibleEnd = 2,
+  }) {
     if (value == null) {
       return 'null';
     }
@@ -125,9 +128,4 @@ class AppLogger {
     final text = value?.toString();
     return '<redacted:${mask(text)}>';
   }
-}
-
-class _DebugOnlyFilter extends LogFilter {
-  @override
-  bool shouldLog(LogEvent event) => kDebugMode;
 }
