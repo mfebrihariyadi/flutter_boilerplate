@@ -3,13 +3,20 @@ import 'package:get/get.dart';
 import 'package:boilerplate/app/domain/usecases/login_usecase.dart';
 import 'package:boilerplate/core/helpers/toast_helper.dart';
 import 'package:boilerplate/core/logger/app_logger.dart';
+import 'package:boilerplate/core/services/session_service.dart';
 import 'package:boilerplate/core/services/storage_service.dart';
+import 'package:boilerplate/routes/app_routes.dart';
 
 class AuthController extends GetxController {
   final LoginUseCase _loginUseCase;
   final StorageService _storageService;
+  final SessionService _sessionService;
 
-  AuthController(this._loginUseCase, this._storageService);
+  AuthController(
+    this._loginUseCase,
+    this._storageService,
+    this._sessionService,
+  );
 
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
@@ -70,7 +77,10 @@ class AuthController extends GetxController {
             refreshToken: user.refreshToken!,
           );
         }
+        await _storageService.saveCurrentUser(user);
+        _sessionService.setCurrentUser(user);
         await ToastHelper.showSuccess('Welcome ${user.username}');
+        await Get.offAllNamed(AppRoutes.home);
       },
     );
   }
