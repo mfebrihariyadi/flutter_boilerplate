@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:boilerplate/app/data/models/user_model.dart';
 import 'package:boilerplate/app/domain/entities/user_entity.dart';
+import 'package:boilerplate/core/constants/app_constant.dart';
 import 'package:boilerplate/core/logger/app_logger.dart';
 
 class StorageService extends GetxService {
@@ -29,13 +30,22 @@ class StorageService extends GetxService {
   }
 
   Future<void> saveAuthTokens({
-    required String accessToken,
-    required String refreshToken,
+    String? accessToken,
+    String? refreshToken,
   }) async {
-    await Future.wait([
-      saveAccessToken(accessToken),
-      saveRefreshToken(refreshToken),
-    ]);
+    final futures = <Future<void>>[];
+    
+    if (accessToken != null && accessToken.isNotEmpty) {
+      futures.add(saveAccessToken(accessToken));
+    }
+    
+    if (AuthConfig.supportsRefreshToken && 
+        refreshToken != null && 
+        refreshToken.isNotEmpty) {
+      futures.add(saveRefreshToken(refreshToken));
+    }
+    
+    await Future.wait(futures);
   }
 
   Future<void> saveCurrentUser(UserEntity user) async {
@@ -80,11 +90,16 @@ class StorageService extends GetxService {
 
   bool hasAuthSession() {
     final accessToken = getAccessToken();
+    final hasAccess = accessToken != null && accessToken.isNotEmpty;
+    
+    if (!AuthConfig.supportsRefreshToken) {
+      return hasAccess;
+    }
+    
     final refreshToken = getRefreshToken();
-    return accessToken != null &&
-        accessToken.isNotEmpty &&
-        refreshToken != null &&
-        refreshToken.isNotEmpty;
+    final hasRefresh = refreshToken != null && refreshToken.isNotEmpty;
+    
+    return hasAccess && hasRefresh;
   }
 
   Future<void> removeAccessToken() async {
@@ -103,7 +118,13 @@ class StorageService extends GetxService {
   }
 
   Future<void> removeAuthTokens() async {
-    await Future.wait([removeAccessToken(), removeRefreshToken()]);
+    final futures = <Future<void>>[removeAccessToken()];
+    
+    if (AuthConfig.supportsRefreshToken) {
+      futures.add(removeRefreshToken());
+    }
+    
+    await Future.wait(futures);
   }
 
   Future<void> clearSession() async {

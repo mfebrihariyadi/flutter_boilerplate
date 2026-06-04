@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:boilerplate/app/data/models/auth_tokens_model.dart';
+import 'package:boilerplate/core/constants/app_constant.dart';
 import 'package:boilerplate/core/logger/app_logger.dart';
 import 'package:boilerplate/core/constants/api_constant.dart';
 import 'package:boilerplate/core/services/storage_service.dart';
@@ -76,7 +77,9 @@ class AuthInterceptor extends Interceptor {
       );
 
       final requestOptions = err.requestOptions;
-      requestOptions.headers['Authorization'] = 'Bearer ${tokens.accessToken}';
+      if (tokens.accessToken != null) {
+        requestOptions.headers['Authorization'] = 'Bearer ${tokens.accessToken}';
+      }
       requestOptions.extra['retriedWithRefresh'] = true;
 
       AppLogger.d(
@@ -108,6 +111,10 @@ class AuthInterceptor extends Interceptor {
   }
 
   bool _shouldAttemptRefresh(DioException err) {
+    if (!AuthConfig.supportsRefreshToken) {
+      return false;
+    }
+    
     final refreshToken = _storageService.getRefreshToken();
     final path = err.requestOptions.path;
 

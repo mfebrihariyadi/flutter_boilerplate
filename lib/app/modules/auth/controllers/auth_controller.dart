@@ -12,11 +12,7 @@ class AuthController extends GetxController {
   final StorageService _storageService;
   final SessionService _sessionService;
 
-  AuthController(
-    this._loginUseCase,
-    this._storageService,
-    this._sessionService,
-  );
+  AuthController(this._loginUseCase, this._storageService, this._sessionService);
 
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
@@ -46,35 +42,25 @@ class AuthController extends GetxController {
       data: {'username': AppLogger.mask(usernameController.text)},
     );
     isLoading.value = true;
-    final result = await _loginUseCase.execute(
-      usernameController.text,
-      passwordController.text,
-    );
+    final result = await _loginUseCase.execute(usernameController.text, passwordController.text);
     isLoading.value = false;
 
     result.fold(
       (failure) async {
-        AppLogger.w(
-          'Login failed',
-          tag: 'AuthController',
-          data: {'message': failure.message},
-        );
+        AppLogger.w('Login failed', tag: 'AuthController', data: {'message': failure.message});
         await ToastHelper.showError(failure.message);
       },
       (user) async {
-        AppLogger.i(
-          'Login succeeded',
-          tag: 'AuthController',
-          data: {'username': AppLogger.mask(user.username)},
-        );
-        if (user.accessToken != null && user.refreshToken != null) {
-          AppLogger.d(
-            'Persisting auth tokens after login',
-            tag: 'AuthController',
-          );
+        AppLogger.i('Login succeeded', tag: 'AuthController', data: {'username': AppLogger.mask(user.username)});
+        
+        final hasAccessToken = user.accessToken != null && user.accessToken!.isNotEmpty;
+        final hasRefreshToken = user.refreshToken != null && user.refreshToken!.isNotEmpty;
+        
+        if (hasAccessToken || hasRefreshToken) {
+          AppLogger.d('Persisting auth tokens after login', tag: 'AuthController');
           await _storageService.saveAuthTokens(
-            accessToken: user.accessToken!,
-            refreshToken: user.refreshToken!,
+            accessToken: user.accessToken,
+            refreshToken: user.refreshToken,
           );
         }
         await _storageService.saveCurrentUser(user);
